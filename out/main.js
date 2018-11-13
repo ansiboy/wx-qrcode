@@ -49,14 +49,6 @@ function openid(req, res, config) {
         let urlInfo = url.parse(req.url);
         let query = querystring.parse(urlInfo.query);
         let { code, from, modelName, arg } = query;
-        // let { openid } = await sns.oauth2.access_token(config.appid, config.secret, code as string)
-        //TODO:处理 cacheItem 为空的情况
-        // let cacheItem: CacheItem = cache.get(from)
-        // if (cacheItem == null) {
-        //     let error = new Error(`Cache item of ${from} is null`)
-        //     outputError(res, error)
-        //     return
-        // }
         //TODO:处理 model 为空的情况
         let model = config.models[modelName];
         if (model == null) {
@@ -64,7 +56,6 @@ function openid(req, res, config) {
             res.end(`model ${modelName} is null`);
             return;
         }
-        // cacheItem.openid = openid;
         let pathname = path.join(__dirname, 'wx-page.html');
         console.log(`to read file ${pathname}`);
         fs.readFile(pathname, (err, data) => {

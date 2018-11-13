@@ -1,10 +1,8 @@
-// import * as express from 'express'
 import * as http from 'http'
 import * as path from 'path'
 import * as socket_io from 'socket.io'
 import messages from './messages'
 import { sns } from './weixin';
-// import * as cache from 'memory-cache';
 import * as url from 'url';
 import * as querystring from 'querystring';
 import * as fs from 'fs'
@@ -72,15 +70,6 @@ async function openid(req: http.IncomingMessage, res: http.ServerResponse, confi
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
     let { code, from, modelName, arg } = query
-    // let { openid } = await sns.oauth2.access_token(config.appid, config.secret, code as string)
-
-    //TODO:处理 cacheItem 为空的情况
-    // let cacheItem: CacheItem = cache.get(from)
-    // if (cacheItem == null) {
-    //     let error = new Error(`Cache item of ${from} is null`)
-    //     outputError(res, error)
-    //     return
-    // }
 
     //TODO:处理 model 为空的情况
     let model = config.models[modelName as string]
@@ -89,8 +78,6 @@ async function openid(req: http.IncomingMessage, res: http.ServerResponse, confi
         res.end(`model ${modelName} is null`)
         return
     }
-
-    // cacheItem.openid = openid;
 
     let pathname = path.join(__dirname, 'wx-page.html')
     console.log(`to read file ${pathname}`)

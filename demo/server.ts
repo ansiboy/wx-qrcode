@@ -1,5 +1,5 @@
 
-import { setServer, Config } from '../main';
+import { setServer, Config } from '../out/main';
 import * as http from 'http'
 import * as fs from 'fs'
 import * as path from 'path'
