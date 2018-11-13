@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/css/bootstrap.css">
+    <title>@model.title</title>
+    <style>
+        footer {
+            position: absolute;
+            bottom: 0px;
+        }
+        h4 {
+            padding-top: 80px;
+            padding-bottom: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <input id="input_from" type="hidden" value="@model.masterId" />
+    <input id="input_modelName" type="hidden" value="@model.modelName" />
+    <input id="input_argument" type="hidden" value="@model.argument" />
+    <input id="input_code" type="hidden" value="@model.code" />
+
+    <div id="main" class="container-fluid">
+        <div id="normal_element">
+            <h4 class="text-center">@model.content</h4>
+            <h5 id="error" style="display:none;"></h5>
+            <button id="btn_confirm" class="btn btn-block btn-primary">
+                @model.buttonText
+            </button>
+            <button id="btn_cancel" class="btn btn-block btn-default">
+                @model.buttonText
+            </button>
+        </div>
+        <div id="success_element" class="text-center" style="display:none">
+            <h4>@model.successText</h4>
+        </div>
+        <div id="fail_element" class="text-center" style="display:none">
+            <h4>@model.failText</h4>
+        </div>
+    </div>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let masterId = document.getElementById('input_from').value
+        let modelName = document.getElementById('input_modelName').value
+        let argument = document.getElementById('input_argument').value
+        let code = document.getElementById('input_code').value
+
+        var socket = io({ query: { role: 'slave', masterId } });
+        let event_send = false
+        socket.on('connect', function () {
+            if (!event_send) {
+                event_send = true
+                socket.emit('scan', { from: socket.id })
+            }
+
+            let confirmButton = document.getElementById('btn_confirm')
+            confirmButton.onclick = function () {
+                confirmButton.disabled = true
+                socket.emit('confirm', { modelName, argument, code })
+            }
+
+            let cancelButton = document.getElementById('btn_cancel')
+            cancelButton.onclick = function () {
+                socket.emit('cancel')
+                history.back()
+            }
+
+            window.onunload = function () {
+                socket.emit(`exit`, { from: socket.id })
+            }
+
+            socket.on('exception', function ({ message }) {
+                alert(message)
+                document.getElementById('error').innerText = message
+            })
+            socket.on('success', function () {
+                document.getElementById('normal_element').style.display = 'none'
+                document.getElementById('success_element').style.removeProperty('display')
+            })
+            socket.on('fail', function () {
+                document.getElementById('normal_element').style.display = 'none'
+                document.getElementById('fail_element').style.removeProperty('display')
+            })
+
+        })
+
+    </script>
+</body>
+
+</html>

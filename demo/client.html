@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/css/bootstrap.css">
+</head>
+
+<body>
+    <div class="container text-center" style="max-width:400px;">
+        <div>
+            <img id="img_qrcode" />
+            <h1 id="msg">请使用微信扫描二维码进行登录</h1>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = io({ query: { role: 'master' } });
+        socket.on('connect', function () {
+
+            let img = document.getElementById('img_qrcode')
+            let arg = 'argument'
+            img.src = `/image?from=${socket.id}&model=login&arg=${arg}`
+
+            let msg_element = document.getElementById('msg')
+            socket.on('success', function () {
+                msg_element.innerHTML = '登录成功'
+            })
+
+            socket.on('fail', function () {
+
+            })
+
+            socket.on('exception', function ({ message }) {
+                console.log(message)
+            })
+        })
+    </script>
+</body>
+
+</html>

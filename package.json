@@ -1,0 +1,32 @@
+{
+  "dependencies": {
+    "@types/node": "^10.12.5",
+    "@types/socket.io": "^2.1.0",
+    "node-fetch": "^2.2.1",
+    "qr-image": "^3.2.0",
+    "scribe-js": "^2.0.4",
+    "socket.io": "^2.1.1"
+  },
+  "name": "wx-qrcode",
+  "description": "封装微信扫码功能，用于快速实现扫码登录，扫码绑定微信等功能",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ansiboy/wx-qrcode.git"
+  },
+  "keywords": [
+    "weixin",
+    "qrcode",
+    "openid"
+  ],
+  "author": "mai.shu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ansiboy/wx-qrcode/issues"
+  },
+  "homepage": "https://github.com/ansiboy/wx-qrcode#readme"
+}
