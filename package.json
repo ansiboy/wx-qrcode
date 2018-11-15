@@ -11,7 +11,7 @@
   },
   "name": "maishu-wx-qrcode",
   "description": "封装微信扫码功能，用于快速实现扫码登录，扫码绑定微信等功能",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "./out/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
