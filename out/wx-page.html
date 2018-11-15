@@ -4,6 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="stylesheet" href="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/css/bootstrap.css">
+
     <title>@model.title</title>
     <style>
         footer {
@@ -22,6 +23,7 @@
     <input id="input_modelName" type="hidden" value="@model.modelName" />
     <input id="input_argument" type="hidden" value="@model.argument" />
     <input id="input_code" type="hidden" value="@model.code" />
+    <input id="input_appid" type="hidden" value="@model.appid" />
 
     <div id="main" class="container-fluid">
         <div id="normal_element">
@@ -31,7 +33,7 @@
                 @model.buttonText
             </button>
             <button id="btn_cancel" class="btn btn-block btn-default">
-                @model.buttonText
+                取消
             </button>
         </div>
         <div id="success_element" class="text-center" style="display:none">
@@ -43,8 +45,28 @@
     </div>
 
 
+    <script src="http://res.wx.qq.com/open/js/jweixin-1.4.0.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+
+        let { protocol, pathname, search } = location
+        let url = `${protocol}//${pathname}${search}`
+        fetch('/jsSignature?url=' + url).then(async r => {
+            let obj = await r.json()
+            obj.jsApiList = ['closeWindow']
+            wx.config(obj)
+            // wx.config({
+            //     debug: true, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+            //     appId: document.getElementById('input_appid').value, // 必填，公众号的唯一标识
+            //     timestamp: new Date().getTime(), // 必填，生成签名的时间戳
+            //     nonceStr: nonceStr, // 必填，生成签名的随机串
+            //     signature: '',// 必填，签名
+            //     jsApiList: [] // 必填，需要使用的JS接口列表
+            // });
+        })
+
+
+
         let masterId = document.getElementById('input_from').value
         let modelName = document.getElementById('input_modelName').value
         let argument = document.getElementById('input_argument').value
@@ -67,7 +89,7 @@
             let cancelButton = document.getElementById('btn_cancel')
             cancelButton.onclick = function () {
                 socket.emit('cancel')
-                history.back()
+                wx.closeWindow()
             }
 
             window.onunload = function () {

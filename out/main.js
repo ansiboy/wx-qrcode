@@ -12,10 +12,10 @@ const path = require("path");
 const socket_io = require("socket.io");
 const messages_1 = require("./messages");
 const weixin_1 = require("./weixin");
-// import * as cache from 'memory-cache';
 const url = require("url");
 const querystring = require("querystring");
 const fs = require("fs");
+const sha1 = require("js-sha1");
 require('scribe-js')();
 function image(req, res, config) {
     let urlInfo = url.parse(req.url);
@@ -32,24 +32,26 @@ function image(req, res, config) {
     }
     let appid = config.appid;
     let arg = query.arg || '';
-    // let cacheItem: CacheItem = { modelName, Argument: arg }
-    // cache.put(from, cacheItem)
-    console.log(`set cache item for ${from}`);
+    let scope = query.scope || 'snsapi_base';
     let baseURL = 'http://wx-openid.bailunmei.com';
-    let redirect_uri = encodeURIComponent(`${baseURL}/openid?from=${from}&modelName=${modelName}&arg=${arg}`);
-    let auth_url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirect_uri}&response_type=code&scope=snsapi_base#wechat_redirect`;
+    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&modelName=${modelName}&arg=${arg}`);
+    let auth_url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}#wechat_redirect`;
     let qr = require('qr-image');
     let code = qr.image(auth_url, { type: 'png' });
     console.log(`auth url: ${auth_url}`);
     res.setHeader('Content-type', 'image/png');
     code.pipe(res);
 }
-function openid(req, res, config) {
+function code(req, res, config) {
     return __awaiter(this, void 0, void 0, function* () {
         let urlInfo = url.parse(req.url);
         let query = querystring.parse(urlInfo.query);
         let { code, from, modelName, arg } = query;
-        //TODO:处理 model 为空的情况
+        if (modelName == null) {
+            let err = new Error(`Argument modelName is required.`);
+            outputError(res, err);
+            return;
+        }
         let model = config.models[modelName];
         if (model == null) {
             console.log(`model ${modelName} is null`);
@@ -65,6 +67,11 @@ function openid(req, res, config) {
             }
             let html = data.toString();
             var vash = require('vash');
+            if (!vash) {
+                let err = new Error('Can not load vash module.');
+                outputError(res, err);
+                return;
+            }
             var tpl = vash.compile(html);
             let text = model.text;
             var out = tpl({
@@ -84,6 +91,29 @@ function openid(req, res, config) {
         });
     });
 }
+function jsSignature(req, res, config) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let urlInfo = url.parse(req.url);
+        let query = querystring.parse(urlInfo.query);
+        let u = query.url;
+        if (!u) {
+            let err = new Error(`Argument url is required.`);
+            outputError(res, err);
+            return;
+        }
+        let cgi_bin = weixin_1.create_cgi_bin(config.appid, config.secret);
+        let noncestr = 'noncestr';
+        let timestamp = (Date.now() / 1000).toFixed();
+        let t = yield cgi_bin.ticket.getticket('jsapi');
+        let str = `jsapi_ticket=${t.ticket}&noncestr=${noncestr}&timestamp=${timestamp}&url=${u}`;
+        console.log({ method: 'jsSignature', encode_string: str });
+        let hash = sha1(str);
+        res.setHeader('Content-type', 'application/json');
+        res.write({ signature: hash, appId: config.appid, timestamp, noncestr });
+        res.end();
+    });
+}
+exports.jsSignature = jsSignature;
 function outputError(response, err) {
     console.assert(err != null, 'error is null');
     console.log(err);
@@ -111,13 +141,18 @@ function setServer(server, config) {
                 break;
             case '/code':
             case '/openid':
-                openid(req, res, config);
+                code(req, res, config);
+                break;
+            case '/jsSignature':
+                jsSignature(req, res, config);
                 break;
             default:
                 // 说明该路径没有处理
-                if (res.writableLength == 0 && res.writable) {
+                if (res.writable) {
                     let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`);
-                    throw err;
+                    // throw err
+                    outputError(res, err);
+                    return;
                 }
         }
     });
@@ -207,7 +242,9 @@ function setServer(server, config) {
                 return;
             }
             console.log(`Method "${modelName}" is exists and will execute.`);
-            weixin_1.sns.oauth2.access_token(config.appid, config.secret, code)
+            /** 通过 code 获取用户信息 */
+            let sns = weixin_1.create_sns(config.appid, config.secret);
+            sns.oauth2.access_token(code)
                 .then(obj => {
                 return method(obj.openid, argument);
             })
