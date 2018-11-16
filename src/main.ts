@@ -8,8 +8,6 @@ import * as querystring from 'querystring';
 import * as fs from 'fs'
 import sha1 = require('js-sha1')
 
-require('scribe-js')();
-
 export type Model = {
     method: (userInfo: { openid: string }, arg: string) => Promise<any>,
     openid?: string,
