@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import * as http from 'http';
 export declare type Model = {
-    method: (openid: string, arg: string) => Promise<any>;
+    method: (userInfo: any, arg: string) => Promise<any>;
     openid?: string;
     text: {
         title: string;

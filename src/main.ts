@@ -11,7 +11,7 @@ import sha1 = require('js-sha1')
 require('scribe-js')();
 
 export type Model = {
-    method: (openid: string, arg: string) => Promise<any>,
+    method: (userInfo: { openid: string }, arg: string) => Promise<any>,
     openid?: string,
     text: {
         title: string,
@@ -23,20 +23,12 @@ export type Model = {
     }
 }
 
-type CacheItem = {
-    modelName: string,
-    openid?: string,
-    Argument?: string,
-}
-
 export interface Config {
     appid: string,
     secret: string,
     models: { [name: string]: Model },
     port: number,
 }
-
-
 
 function image(req: http.IncomingMessage, res: http.ServerResponse, config: Config) {
     let urlInfo = url.parse(req.url);
@@ -140,7 +132,7 @@ export async function jsSignature(req, res: http.ServerResponse, config: Config)
 
     let hash = sha1(str)
     res.setHeader('Content-type', 'application/json')
-    res.write({ signature: hash, appId: config.appid, timestamp, noncestr })
+    res.write(JSON.stringify({ signature: hash, appId: config.appid, timestamp, noncestr }))
     res.end()
 }
 
@@ -204,7 +196,6 @@ export function setServer(server: http.Server, config: Config) {
     let io = socket_io({ path: '/socket.io' })
 
     io.on('connection', function (socket) {
-
         let role: 'master' | 'slave' = socket.handshake.query.role
         if (!role) {
             raiseError(socket, 'Query parameter "role" is required.')
@@ -223,10 +214,12 @@ export function setServer(server: http.Server, config: Config) {
         }
 
         if (role == 'master') {
+            console.info('execute processMaster method')
             processMaster(socket)
         }
         else if (role == 'slave') {
             master_slave_ids[masterId] = socket.id
+            console.info('execute processSlave method')
             processSlave(socket, masterId)
         }
     });
@@ -238,11 +231,11 @@ export function setServer(server: http.Server, config: Config) {
 
     let master_slave_ids: { [master_id: string]: string } = {}
     function processMaster(socket: socket_io.Socket) {
-        socket.on(messages.success, function (args) {
-            let slave_id = master_slave_ids[socket.id]
-            console.assert(slave_id)
-            socket.to(slave_id).emit(messages.success, args)
-        })
+        // socket.on(messages.success, function (args) {
+        //     let slave_id = master_slave_ids[socket.id]
+        //     console.assert(slave_id)
+        //     socket.to(slave_id).emit(messages.success, args)
+        // })
     }
 
     function processSlave(socket: socket_io.Socket, masterId: string) {
@@ -266,7 +259,7 @@ export function setServer(server: http.Server, config: Config) {
         })
 
         socket.on(messages.confirm, function (args) {
-            console.log(`event: ${messages.confirm}`)
+            console.log(`receive-event: ${messages.confirm}`)
             let { modelName, argument, code } = args
             if (!modelName) {
                 let err = `Argument modeName is required`
@@ -298,13 +291,19 @@ export function setServer(server: http.Server, config: Config) {
             let sns = create_sns(config.appid, config.secret)
             sns.oauth2.access_token(code)
                 .then(obj => {
-                    return method(obj.openid, argument)
+                    console.info('get access token success, user info is:')
+                    console.log(obj)
+                    return method(obj, argument)
                 })
                 .then(o => {
+                    console.info('execute access_token relactive method success')
                     socket.emit(messages.success)
+                    console.info(`emit success message to ${masterId}`)
                     socket.to(masterId).emit(messages.success, o)
                 })
                 .catch(err => {
+                    console.info('get access token fail, err is:')
+                    console.info(err)
                     socket.emit(messages.fail, err)
                     socket.to(masterId).emit(messages.fail, err)
                 })

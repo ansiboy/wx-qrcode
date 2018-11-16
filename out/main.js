@@ -109,7 +109,7 @@ function jsSignature(req, res, config) {
         console.log({ method: 'jsSignature', encode_string: str });
         let hash = sha1(str);
         res.setHeader('Content-type', 'application/json');
-        res.write({ signature: hash, appId: config.appid, timestamp, noncestr });
+        res.write(JSON.stringify({ signature: hash, appId: config.appid, timestamp, noncestr }));
         res.end();
     });
 }
@@ -181,10 +181,12 @@ function setServer(server, config) {
             return;
         }
         if (role == 'master') {
+            console.info('execute processMaster method');
             processMaster(socket);
         }
         else if (role == 'slave') {
             master_slave_ids[masterId] = socket.id;
+            console.info('execute processSlave method');
             processSlave(socket, masterId);
         }
     });
@@ -194,11 +196,11 @@ function setServer(server, config) {
     }
     let master_slave_ids = {};
     function processMaster(socket) {
-        socket.on(messages_1.default.success, function (args) {
-            let slave_id = master_slave_ids[socket.id];
-            console.assert(slave_id);
-            socket.to(slave_id).emit(messages_1.default.success, args);
-        });
+        // socket.on(messages.success, function (args) {
+        //     let slave_id = master_slave_ids[socket.id]
+        //     console.assert(slave_id)
+        //     socket.to(slave_id).emit(messages.success, args)
+        // })
     }
     function processSlave(socket, masterId) {
         console.log(`socket.id: ${socket.id}`);
@@ -218,7 +220,7 @@ function setServer(server, config) {
             socket.to(masterId).emit(messages_1.default.confirm, args);
         });
         socket.on(messages_1.default.confirm, function (args) {
-            console.log(`event: ${messages_1.default.confirm}`);
+            console.log(`receive-event: ${messages_1.default.confirm}`);
             let { modelName, argument, code } = args;
             if (!modelName) {
                 let err = `Argument modeName is required`;
@@ -246,13 +248,19 @@ function setServer(server, config) {
             let sns = weixin_1.create_sns(config.appid, config.secret);
             sns.oauth2.access_token(code)
                 .then(obj => {
-                return method(obj.openid, argument);
+                console.info('get access token success, user info is:');
+                console.log(obj);
+                return method(obj, argument);
             })
                 .then(o => {
+                console.info('execute access_token relactive method success');
                 socket.emit(messages_1.default.success);
+                console.info(`emit success message to ${masterId}`);
                 socket.to(masterId).emit(messages_1.default.success, o);
             })
                 .catch(err => {
+                console.info('get access token fail, err is:');
+                console.info(err);
                 socket.emit(messages_1.default.fail, err);
                 socket.to(masterId).emit(messages_1.default.fail, err);
             });
