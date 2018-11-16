@@ -33,13 +33,15 @@ function image(req: http.IncomingMessage, res: http.ServerResponse, config: Conf
     let query = querystring.parse(urlInfo.query);
     let from = query.from
     if (!from) {
-        res.end('Url parameter "from" is required.')
+        let err = new Error('Url parameter "from" is required.')
+        outputError(res, err)
         return
     }
 
     let modelName: string = query.model as string
     if (!modelName) {
-        res.end('Url parameter "model" is required.')
+        let err = new Error('Url parameter "model" is required.')
+        outputError(res, err)
         return
     }
 

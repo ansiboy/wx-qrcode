@@ -16,18 +16,19 @@ const url = require("url");
 const querystring = require("querystring");
 const fs = require("fs");
 const sha1 = require("js-sha1");
-require('scribe-js')();
 function image(req, res, config) {
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
     let from = query.from;
     if (!from) {
-        res.end('Url parameter "from" is required.');
+        let err = new Error('Url parameter "from" is required.');
+        outputError(res, err);
         return;
     }
     let modelName = query.model;
     if (!modelName) {
-        res.end('Url parameter "model" is required.');
+        let err = new Error('Url parameter "model" is required.');
+        outputError(res, err);
         return;
     }
     let appid = config.appid;
