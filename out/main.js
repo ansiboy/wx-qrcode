@@ -16,6 +16,7 @@ const url = require("url");
 const querystring = require("querystring");
 const fs = require("fs");
 const sha1 = require("js-sha1");
+let console = global.console;
 function image(req, res, config) {
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
@@ -130,13 +131,11 @@ function outputError(response, err) {
     response.write(str);
     response.end();
 }
-function setServer(server, config) {
+function setServer(server, config, logger) {
+    console = logger || console;
     let handler = (req, res) => __awaiter(this, void 0, void 0, function* () {
         let urlInfo = url.parse(req.url);
         switch (urlInfo.pathname) {
-            case '/':
-                res.end("");
-                break;
             case '/image':
                 image(req, res, config);
                 break;
@@ -147,14 +146,14 @@ function setServer(server, config) {
             case '/jsSignature':
                 jsSignature(req, res, config);
                 break;
-            default:
-                // 说明该路径没有处理
-                if (res.writable) {
-                    let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`);
-                    // throw err
-                    outputError(res, err);
-                    return;
-                }
+            // default:
+            //     // 说明该路径没有处理
+            //     if (res.writable) {
+            //         let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`)
+            //         // throw err
+            //         outputError(res, err)
+            //         return
+            //     }
         }
     });
     server.addListener('request', (req, res) => {

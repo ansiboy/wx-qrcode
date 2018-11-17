@@ -23,4 +23,4 @@ export interface Config {
     port: number;
 }
 export declare function jsSignature(req: any, res: http.ServerResponse, config: Config): Promise<void>;
-export declare function setServer(server: http.Server, config: Config): http.Server;
+export declare function setServer(server: http.Server, config: Config, logger?: Console): http.Server;

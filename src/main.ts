@@ -7,6 +7,7 @@ import * as url from 'url';
 import * as querystring from 'querystring';
 import * as fs from 'fs'
 import sha1 = require('js-sha1')
+let console = global.console
 
 export type Model = {
     method: (userInfo: { openid: string }, arg: string) => Promise<any>,
@@ -155,13 +156,11 @@ function outputError(response: http.ServerResponse, err: Error) {
     response.end();
 }
 
-export function setServer(server: http.Server, config: Config) {
+export function setServer(server: http.Server, config: Config, logger?: Console) {
+    console = logger || console
     let handler = async (req: http.IncomingMessage, res: http.ServerResponse) => {
         let urlInfo = url.parse(req.url);
         switch (urlInfo.pathname) {
-            case '/':
-                res.end("")
-                break;
             case '/image':
                 image(req, res, config)
                 break;
@@ -172,14 +171,14 @@ export function setServer(server: http.Server, config: Config) {
             case '/jsSignature':
                 jsSignature(req, res, config)
                 break
-            default:
-                // 说明该路径没有处理
-                if (res.writable) {
-                    let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`)
-                    // throw err
-                    outputError(res, err)
-                    return
-                }
+            // default:
+            //     // 说明该路径没有处理
+            //     if (res.writable) {
+            //         let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`)
+            //         // throw err
+            //         outputError(res, err)
+            //         return
+            //     }
         }
     }
 
