@@ -138,7 +138,6 @@ export async function jsSignature(req, res: http.ServerResponse, config: Config)
 }
 
 function outputError(response: http.ServerResponse, err: Error) {
-    console.assert(err != null, 'error is null');
     console.log(err)
     const StatusCodeDefaultError = 600;
 
