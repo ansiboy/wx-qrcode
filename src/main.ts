@@ -50,7 +50,7 @@ function image(req: http.IncomingMessage, res: http.ServerResponse, config: Conf
     let arg = query.arg as string || ''
     let scope = query.scope || 'snsapi_base'
     let baseURL = 'http://wx-openid.bailunmei.com'
-    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&modelName=${modelName}&arg=${arg}`);
+    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&model=${modelName}&arg=${arg}`);
     let auth_url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}#wechat_redirect`
     let qr = require('qr-image');
     let code = qr.image(auth_url, { type: 'png' });
@@ -62,10 +62,10 @@ function image(req: http.IncomingMessage, res: http.ServerResponse, config: Conf
 async function code(req: http.IncomingMessage, res: http.ServerResponse, config: Config) {
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
-    let { code, from, modelName, arg } = query
-
+    let { code, from, arg } = query
+    let modelName = query.model
     if (modelName == null) {
-        let err = new Error(`Argument modelName is required.`)
+        let err = new Error(`Argument model is required.`)
         outputError(res, err)
         return
     }
@@ -155,33 +155,31 @@ function outputError(response: http.ServerResponse, err: Error) {
     response.end();
 }
 
-export function setServer(server: http.Server, config: Config, logger?: Console) {
+export function run(config: Config, logger?: Console) {
     console = logger || console
     let handler = async (req: http.IncomingMessage, res: http.ServerResponse) => {
         let urlInfo = url.parse(req.url);
         switch (urlInfo.pathname) {
             case '/image':
                 image(req, res, config)
-                break;
+                return;
             case '/code':
             case '/openid':
                 code(req, res, config)
-                break;
+                return;
             case '/jsSignature':
                 jsSignature(req, res, config)
-                break
-            // default:
-            //     // 说明该路径没有处理
-            //     if (res.writable) {
-            //         let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`)
-            //         // throw err
-            //         outputError(res, err)
-            //         return
-            //     }
+                return
+            default:
+                let err = new Error(`Unkonw pathname ${urlInfo.pathname}. url ${req.url}`)
+                // throw err
+                outputError(res, err)
+                return
+
         }
     }
 
-    server.addListener('request', (req: http.IncomingMessage, res: http.ServerResponse) => {
+    let server: http.Server = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
         try {
             handler(req, res)
         }
@@ -189,7 +187,6 @@ export function setServer(server: http.Server, config: Config, logger?: Console)
             outputError(res, err)
         }
     })
-
 
     let io = socket_io({ path: '/socket.io' })
 
@@ -258,7 +255,8 @@ export function setServer(server: http.Server, config: Config, logger?: Console)
 
         socket.on(messages.confirm, function (args) {
             console.log(`receive-event: ${messages.confirm}`)
-            let { modelName, argument, code } = args
+            let { argument, code } = args
+            let modelName = args.model
             if (!modelName) {
                 let err = `Argument modeName is required`
                 raiseError(socket, err)
@@ -308,9 +306,9 @@ export function setServer(server: http.Server, config: Config, logger?: Console)
         })
     }
 
-
     io.listen(server)
 
+    server.listen(config.port)
     return server
 }
 
