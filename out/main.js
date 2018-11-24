@@ -37,7 +37,7 @@ function image(req, res, config) {
     let arg = query.arg || '';
     let scope = query.scope || 'snsapi_base';
     let baseURL = 'http://wx-openid.bailunmei.com';
-    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&model=${modelName}&arg=${arg}`);
+    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&modelName=${modelName}&arg=${arg}`);
     let auth_url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}#wechat_redirect`;
     let qr = require('qr-image');
     let code = qr.image(auth_url, { type: 'png' });
@@ -49,8 +49,7 @@ function code(req, res, config) {
     return __awaiter(this, void 0, void 0, function* () {
         let urlInfo = url.parse(req.url);
         let query = querystring.parse(urlInfo.query);
-        let { code, from, arg } = query;
-        let modelName = query.model;
+        let { modelName, code, from, arg } = query;
         if (modelName == null) {
             let err = new Error(`Argument model is required.`);
             outputError(res, err);
@@ -117,7 +116,6 @@ function jsSignature(req, res, config) {
         res.end();
     });
 }
-exports.jsSignature = jsSignature;
 function outputError(response, err) {
     console.log(err);
     const StatusCodeDefaultError = 600;
@@ -220,9 +218,9 @@ function run(config, logger) {
         socket.on(messages_1.default.confirm, function (args) {
             console.log(`receive-event: ${messages_1.default.confirm}`);
             let { argument, code } = args;
-            let modelName = args.model;
+            let modelName = args.modelName;
             if (!modelName) {
-                let err = `Argument modeName is required`;
+                let err = `Argument modelName is required`;
                 raiseError(socket, err);
                 return;
             }

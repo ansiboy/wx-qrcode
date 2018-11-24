@@ -50,7 +50,7 @@ function image(req: http.IncomingMessage, res: http.ServerResponse, config: Conf
     let arg = query.arg as string || ''
     let scope = query.scope || 'snsapi_base'
     let baseURL = 'http://wx-openid.bailunmei.com'
-    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&model=${modelName}&arg=${arg}`);
+    let redirect_uri = encodeURIComponent(`${baseURL}/code?from=${from}&modelName=${modelName}&arg=${arg}`);
     let auth_url = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}#wechat_redirect`
     let qr = require('qr-image');
     let code = qr.image(auth_url, { type: 'png' });
@@ -62,8 +62,7 @@ function image(req: http.IncomingMessage, res: http.ServerResponse, config: Conf
 async function code(req: http.IncomingMessage, res: http.ServerResponse, config: Config) {
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
-    let { code, from, arg } = query
-    let modelName = query.model
+    let { modelName, code, from, arg } = query
     if (modelName == null) {
         let err = new Error(`Argument model is required.`)
         outputError(res, err)
@@ -114,7 +113,7 @@ async function code(req: http.IncomingMessage, res: http.ServerResponse, config:
     })
 }
 
-export async function jsSignature(req, res: http.ServerResponse, config: Config) {
+async function jsSignature(req, res: http.ServerResponse, config: Config) {
     let urlInfo = url.parse(req.url);
     let query = querystring.parse(urlInfo.query);
     let u = query.url
@@ -256,9 +255,9 @@ export function run(config: Config, logger?: Console) {
         socket.on(messages.confirm, function (args) {
             console.log(`receive-event: ${messages.confirm}`)
             let { argument, code } = args
-            let modelName = args.model
+            let modelName = args.modelName
             if (!modelName) {
-                let err = `Argument modeName is required`
+                let err = `Argument modelName is required`
                 raiseError(socket, err)
                 return
             }
